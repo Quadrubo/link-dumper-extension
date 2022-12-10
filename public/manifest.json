@@ -16,9 +16,12 @@
     "default_title": "Link Dumper",
     "default_popup": "popup.html"
   },
+  "options_page": "options.html",
   "permissions": [
-    "storage"
+    "storage",
+    "identity"
   ],
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1XR3TQGdc8Zj5N1B4wXHHx0TaolKAl4b2WhgugescqyzbpI3tDYRX2NB8LV6OtgzpuzaR6xsiNro1ba4SqRCLGKsPAfzwpGf1GszVBbtaH45YT2KcwE7yDC1GbQu4j77Z5f26g5xaurSxbruELE9iLzFpvZlb7SEPdCp35iqw3R2uG70QLTkrPZezUBNBhzCiG1071/kPGVJ1yxaYYtqo0np28mmhAOINxUSYh0b+DKmMcPSuCRy6cHcDqo7yteW8W9QSLX6Tywsta4OBSsrBHJEXmW8nWgf69D3KMMew3toogqJuWfs1vE/TNOENJb8RO3NTK8GJML4gAYNTqaTAwIDAQAB",
   "content_scripts": [
     {
       "matches": [

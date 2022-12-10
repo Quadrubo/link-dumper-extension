@@ -109,4 +109,10 @@ import './popup.css';
       console.log(response.message);
     }
   );
+
+  document.getElementById("options").addEventListener('click', function(e){
+    chrome.tabs.create({url: `chrome-extension://${chrome.runtime.id}/options.html`}, function (tab) {
+        console.log("options page opened");
+    });
+});
 })();

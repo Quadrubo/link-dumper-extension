@@ -2,6 +2,8 @@
 
 My Chrome Extension
 
+https://stackoverflow.com/questions/21497781/how-to-change-chrome-packaged-app-id-or-why-do-we-need-key-field-in-the-manifest/21500707#21500707
+
 ## Features
 
 - Feature 1
