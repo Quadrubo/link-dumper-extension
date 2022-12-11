@@ -1,22 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>My Chrome Extension</title>
-  </head>
-  <body>
-    <div class="app">
-      <h1>Hello, <span id="name"></span></h1>
-      <button id="options">Options</button>
-    </div>
+    <head>
+        <meta charset="UTF-8" />
+        <title>My Chrome Extension</title>
+        <style>
+            body {
+                min-width: 300px;
+            }
+        </style>
+        <link rel="stylesheet" href="tailwind.css" />
+    </head>
 
-    <script src="popup.js"></script>
+    <body>
+        <div class="app bg-gray-100 p-2 space-y-4">
+            <h1
+                id="header"
+                class="text-gray-900 font-semibold text-2xl text-center"
+            ></h1>
 
-    <!--
-      This HTML file opens when you click on icon from the toolbar.
+            <section>
+                <form id="form" class="flex flex-col text-center space-y-3">
+                    <!-- Tags -->
+                    <div class="flex flex-col">
+                        <div class="flex flex-row justify-center space-x-2">
+                            <input
+                                type="text"
+                                id="tags-input"
+                                class="border border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm"
+                                autocomplete="off"
+                            />
+                            <button
+                                class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:border-gray-900 focus:ring focus:ring-gray-300 disabled:opacity-25 transition"
+                                id="save-tag"
+                            >
+                                +
+                            </button>
+                        </div>
+                        <div
+                            id="tags-output"
+                            class="flex flex-row gap-2 flex-wrap"
+                        ></div>
+                    </div>
 
-      To begin the development, run `npm run watch`.
-      To create a production bundle, use `npm run build`.
-    -->
-  </body>
+                    <button
+                        class="px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:border-gray-900 focus:ring focus:ring-gray-300 disabled:opacity-25 transition"
+                        id="save"
+                    >
+                        Save Page
+                    </button>
+                </form>
+            </section>
+
+            <section>
+                <button
+                    id="options"
+                    class="px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:border-gray-900 focus:ring focus:ring-gray-300 disabled:opacity-25 transition"
+                >
+                    Options
+                </button>
+            </section>
+        </div>
+
+        <script src="popup.js"></script>
+
+        <!--
+        This HTML file opens when you click on icon from the toolbar.
+
+        To begin the development, run `npm run watch`.
+        To create a production bundle, use `npm run build`.
+        -->
+    </body>
 </html>

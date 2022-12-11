@@ -1,155 +1,183 @@
 'use strict';
 
-import axios from "axios";
+import axios from 'axios';
 
 (function () {
-  // We will make use of Storage API to get and store `count` value
-  // More information on Storage API can we found at
-  // https://developer.chrome.com/extensions/storage
+    async function getTabData() {
+        return new Promise((resolve, reject) => {
+            chrome.tabs.query(
+                { active: true, lastFocusedWindow: true },
+                (tabs) => {
+                    resolve({
+                        url: tabs[0].url,
+                        title: tabs[0].title,
+                    });
+                }
+            );
+        });
+    }
 
-  // To get storage access, we have to mention it in `permissions` property of manifest.json file
-  // More information on Permissions can we found at
-  // https://developer.chrome.com/extensions/declare_permissions
-  const counterStorage = {
-    get: (cb) => {
-      chrome.storage.sync.get(['count'], (result) => {
-        cb(result.count);
-      });
-    },
-    set: (value, cb) => {
-      chrome.storage.sync.set(
-        {
-          count: value,
-        },
-        () => {
-          cb();
+    function getTags() {
+        const tags_output = document.getElementById('tags-output');
+
+        let tags = [];
+
+        Array.from(tags_output.children).forEach((child) => {
+            tags.push(child.childNodes[0].textContent);
+        });
+
+        return tags;
+    }
+
+    function removeTag(e) {
+        e.preventDefault();
+
+        const parent = this.parentElement;
+
+        parent.remove();
+    }
+
+    function saveTag(e) {
+        e.preventDefault();
+
+        const tags_input = document.getElementById('tags-input');
+        const tag = tags_input.value;
+        const tags_output = document.getElementById('tags-output');
+
+        if (!tag) {
+            return;
         }
-      );
-    },
-  };
 
-  // function setupCounter(initialValue = 0) {
-  //   document.getElementById('counter').innerHTML = initialValue;
+        const tagButton = document.createElement('button');
+        tagButton.classList.add(
+            'tag',
+            'inline-flex',
+            'items-center',
+            'justify-center',
+            'min-h-6',
+            'px-2',
+            'py-0.5',
+            'text-sm',
+            'font-medium',
+            'tracking-tight',
+            'text-primary-700',
+            'rounded-xl',
+            'bg-primary-500/10',
+            'space-x-1'
+        );
+        tags_output.appendChild(tagButton);
 
-  //   document.getElementById('incrementBtn').addEventListener('click', () => {
-  //     updateCounter({
-  //       type: 'INCREMENT',
-  //     });
-  //   });
+        const tagSpan = document.createElement('span');
+        tagSpan.classList.add('text-start');
+        tagSpan.innerHTML = tag;
+        tagButton.appendChild(tagSpan);
 
-  //   document.getElementById('decrementBtn').addEventListener('click', () => {
-  //     updateCounter({
-  //       type: 'DECREMENT',
-  //     });
-  //   });
-  // }
+        tagButton.innerHTML += `<svg class="w-3 h-3 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+      </svg>`;
 
-  // function updateCounter({ type }) {
-  //   counterStorage.get((count) => {
-  //     let newCount;
+        tagButton.addEventListener('click', removeTag);
 
-  //     if (type === 'INCREMENT') {
-  //       newCount = count + 1;
-  //     } else if (type === 'DECREMENT') {
-  //       newCount = count - 1;
-  //     } else {
-  //       newCount = count;
-  //     }
+        tags_input.value = '';
+    }
 
-  //     counterStorage.set(newCount, () => {
-  //       document.getElementById('counter').innerHTML = newCount;
+    async function savePage(e) {
+        e.preventDefault();
 
-  //       // Communicate with content script of
-  //       // active tab by sending a message
-  //       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-  //         const tab = tabs[0];
+        let { url, title } = await getTabData();
+        let tags = getTags();
 
-  //         chrome.tabs.sendMessage(
-  //           tab.id,
-  //           {
-  //             type: 'COUNT',
-  //             payload: {
-  //               count: newCount,
-  //             },
-  //           },
-  //           (response) => {
-  //             console.log('Current count value passed to contentScript file');
-  //           }
-  //         );
-  //       });
-  //     });
-  //   });
-  // }
+        console.log(url, title, tags);
 
-  // function restoreCounter() {
-  //   // Restore count value
-  //   counterStorage.get((count) => {
-  //     if (typeof count === 'undefined') {
-  //       // Set counter value as 0
-  //       counterStorage.set(0, () => {
-  //         setupCounter(0);
-  //       });
-  //     } else {
-  //       setupCounter(count);
-  //     }
-  //   });
-  // }
+        const access_token = await readLocalStorage('access_token');
+        const token_type = await readLocalStorage('token_type');
 
-  // document.addEventListener('DOMContentLoaded', restoreCounter);
-  document.addEventListener('DOMContentLoaded', setUserName);
+        axios
+            .post(
+                'http://localhost/api/links',
+                {
+                    url: url,
+                    title: title,
+                    tags: tags,
+                },
+                {
+                    headers: {
+                        Accept: 'application/json',
+                        Authorization: `${token_type} ${access_token}`,
+                    },
+                }
+            )
+            .then((response) => {
+                console.log(response);
+            })
+            .catch((error) => {
+                console.log(error);
+            });
+    }
 
-  // Communicate with background file by sending a message
-  // chrome.runtime.sendMessage(
-  //   {
-  //     type: 'GREETINGS',
-  //     payload: {
-  //       message: 'Hello, my name is Pop. I am from Popup.',
-  //     },
-  //   },
-  //   (response) => {
-  //     console.log(response.message);
-  //   }
-  // );
+    async function setUserName() {
+        let name;
 
-  async function setUserName() {
-    const name = await getUserName();
-    
-    document.getElementById('name').innerHTML = name;
-  }
-
-  async function readLocalStorage(key) {
-    return new Promise((resolve, reject) => {
-      chrome.storage.local.get([key], function (result) {
-        if (result[key] === undefined) {
-          reject();
-        } else {
-          resolve(result[key]);
+        try {
+            name = await getUserName();
+        } catch (error) {
+            document.getElementById(
+                'header'
+            ).innerHTML = `Please authenticate.`;
+            return;
         }
-      });
-    }); 
-  }
 
-  async function getUserName() {
-    let access_token = await readLocalStorage("access_token");
-    let token_type = await readLocalStorage("token_type");
+        document.getElementById('header').innerHTML = `Hello, ${name}!`;
+    }
 
-    return new Promise((resolve, reject) => {
-      axios.get('http://localhost/api/user', {
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `${token_type} ${access_token}`,
-        }
-      }).then(response => {
-        resolve(response.data.name);
-      }).catch(error => {
-        reject(error);
-      });
+    async function readLocalStorage(key) {
+        return new Promise((resolve, reject) => {
+            chrome.storage.local.get([key], function (result) {
+                if (result[key] === undefined) {
+                    reject();
+                } else {
+                    resolve(result[key]);
+                }
+            });
+        });
+    }
+
+    async function getUserName() {
+        let access_token = await readLocalStorage('access_token');
+        let token_type = await readLocalStorage('token_type');
+
+        return new Promise((resolve, reject) => {
+            axios
+                .get('http://localhost/api/user', {
+                    headers: {
+                        Accept: 'application/json',
+                        Authorization: `${token_type} ${access_token}`,
+                    },
+                })
+                .then((response) => {
+                    resolve(response.data.name);
+                })
+                .catch((error) => {
+                    reject(error);
+                });
+        });
+    }
+
+    function openOptionsPage() {
+        chrome.tabs.create({
+            url: `chrome-extension://${chrome.runtime.id}/options.html`,
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', setUserName);
+    document
+        .getElementById('options')
+        .addEventListener('click', openOptionsPage);
+    document.getElementById('save').addEventListener('click', savePage);
+    document.getElementById('save-tag').addEventListener('click', saveTag);
+    Array.from(document.getElementsByClassName('remove')).forEach(function (
+        element
+    ) {
+        element.addEventListener('click', removeTag);
     });
-  }
-
-  document.getElementById("options").addEventListener('click', function(e){
-    chrome.tabs.create({url: `chrome-extension://${chrome.runtime.id}/options.html`}, function (tab) {
-        console.log("options page opened");
-    });
-});
 })();
