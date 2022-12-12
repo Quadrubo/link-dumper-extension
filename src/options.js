@@ -1,15 +1,15 @@
-// import { SHA256, Base64 } from "crypto-js";
 var CryptoJS = require('crypto-js');
 import axios from 'axios';
 
 window.onload = function () {
-    document.getElementById('reset').addEventListener('click', function () {
-        chrome.identity.clearAllCachedAuthTokens();
-        chrome.storage.local.clear();
-    });
-
+    document.getElementById('reset').addEventListener('click', reset);
     document.getElementById('login').addEventListener('click', getAccessToken);
 };
+
+function reset() {
+    chrome.identity.clearAllCachedAuthTokens();
+    chrome.storage.local.clear();
+}
 
 function callback(redirectURL) {
     const clientID = 1;
@@ -31,14 +31,9 @@ function callback(redirectURL) {
         code: urlParams.get('code'),
     };
 
-    console.log(redirectURL);
-    console.log(params);
-
     axios
         .post('http://localhost/oauth/token', params)
         .then((resp) => {
-            console.log(resp);
-
             localStorage.removeItem('state');
             localStorage.removeItem('code_verifier');
 
@@ -60,8 +55,6 @@ function callback(redirectURL) {
 function authorize() {
     const redirectURL = chrome.identity.getRedirectURL();
     const clientID = 1;
-
-    console.log(redirectURL);
 
     const state = createRandomString(40);
     window.localStorage.setItem('state', state);

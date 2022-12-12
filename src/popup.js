@@ -1,6 +1,7 @@
 'use strict';
 
 import axios from 'axios';
+import { StorageKeyError } from './errors';
 
 (function () {
     async function getTabData() {
@@ -15,6 +16,30 @@ import axios from 'axios';
                 }
             );
         });
+    }
+
+    function writeFeedback(message, positive=false) {
+        let feedback;
+
+        if (positive) {
+            feedback = document.getElementById('positive-feedback');
+        } else {
+            feedback = document.getElementById('negative-feedback');
+        }
+
+        feedback.classList.remove('hidden');
+        feedback.innerHTML = message;
+    }
+
+    function clearFeedback() {
+        const positive = document.getElementById('positive-feedback');
+        const negative = document.getElementById('negative-feedback');
+
+        positive.innerHTML = '';
+        positive.classList.add('hidden');
+        
+        negative.innerHTML = '';
+        negative.classList.add('hidden');
     }
 
     function getTags() {
@@ -32,19 +57,19 @@ import axios from 'axios';
     function removeTag(e) {
         e.preventDefault();
 
-        const parent = this.parentElement;
-
-        parent.remove();
+        this.remove();
     }
 
     function saveTag(e) {
         e.preventDefault();
+        clearFeedback();
 
         const tags_input = document.getElementById('tags-input');
         const tag = tags_input.value;
         const tags_output = document.getElementById('tags-output');
 
         if (!tag) {
+            writeFeedback("The tag can't be empty.");
             return;
         }
 
@@ -72,9 +97,7 @@ import axios from 'axios';
         tagSpan.innerHTML = tag;
         tagButton.appendChild(tagSpan);
 
-        tagButton.innerHTML += `<svg class="w-3 h-3 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-      </svg>`;
+        tagButton.innerHTML += `<svg class="w-3 h-3 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>`;
 
         tagButton.addEventListener('click', removeTag);
 
@@ -83,14 +106,26 @@ import axios from 'axios';
 
     async function savePage(e) {
         e.preventDefault();
+        clearFeedback();
 
         let { url, title } = await getTabData();
         let tags = getTags();
 
-        console.log(url, title, tags);
+        let access_token;
+        let token_type;
 
-        const access_token = await readLocalStorage('access_token');
-        const token_type = await readLocalStorage('token_type');
+        try {
+            access_token = await readLocalStorage('access_token');
+            token_type = await readLocalStorage('token_type');
+        } catch (error) {
+            if (error instanceof StorageKeyError) {
+                writeFeedback('You are not authenticated, please authenticate from the options page.');
+            } else {
+                console.error(error);
+            }
+
+            return;
+        }
 
         axios
             .post(
@@ -108,9 +143,10 @@ import axios from 'axios';
                 }
             )
             .then((response) => {
-                console.log(response);
+                writeFeedback("Page saved!", true);
             })
             .catch((error) => {
+                writeFeedback("Oh no. Something went wrong.")
                 console.log(error);
             });
     }
@@ -121,9 +157,15 @@ import axios from 'axios';
         try {
             name = await getUserName();
         } catch (error) {
-            document.getElementById(
-                'header'
-            ).innerHTML = `Please authenticate.`;
+            if (error instanceof StorageKeyError) {
+                // User is not logged in
+                document.getElementById(
+                    'header'
+                ).innerHTML = `Please authenticate.`;
+            } else {
+                console.error(error);
+            }
+
             return;
         }
 
@@ -134,7 +176,7 @@ import axios from 'axios';
         return new Promise((resolve, reject) => {
             chrome.storage.local.get([key], function (result) {
                 if (result[key] === undefined) {
-                    reject();
+                    reject(new StorageKeyError(`Key ${key} not found.`));
                 } else {
                     resolve(result[key]);
                 }
@@ -164,20 +206,18 @@ import axios from 'axios';
     }
 
     function openOptionsPage() {
+        clearFeedback();
+
         chrome.tabs.create({
             url: `chrome-extension://${chrome.runtime.id}/options.html`,
         });
     }
 
+    // Event listeners
     document.addEventListener('DOMContentLoaded', setUserName);
     document
         .getElementById('options')
         .addEventListener('click', openOptionsPage);
     document.getElementById('save').addEventListener('click', savePage);
     document.getElementById('save-tag').addEventListener('click', saveTag);
-    Array.from(document.getElementsByClassName('remove')).forEach(function (
-        element
-    ) {
-        element.addEventListener('click', removeTag);
-    });
 })();

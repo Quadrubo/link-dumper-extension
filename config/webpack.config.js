@@ -9,7 +9,7 @@ const PATHS = require('./paths');
 const config = (env, argv) =>
     merge(common, {
         entry: {
-            main: PATHS.src + '/tailwind.css',
+            errors: PATHS.src + '/errors.js',
             popup: PATHS.src + '/popup.js',
             options: PATHS.src + '/options.js',
             contentScript: PATHS.src + '/contentScript.js',
